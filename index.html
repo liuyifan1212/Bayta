@@ -91,7 +91,7 @@ var bigText = g.append('text')
   .attr('y', 45);
 
 // Load map data
-d3.json('bay.json', function(error, mapData) {
+d3.json('bay1.json', function(error, mapData) {
   var features = mapData.features;
 
   // Update color scale domain based on data
@@ -127,6 +127,7 @@ function fillFn(d){
 
 // When clicked, zoom in
 function clicked(d) {
+  console.log(d.properties)
   var x, y, k;
 
   // Compute centroid of the selected path
@@ -158,7 +159,7 @@ function mouseover(d){
   d3.select(this).style('fill', 'orange');
 
   // Draw effects
-  textArt(nameFn(d));
+  //textArt(nameFn(d));
 }
 
 function mouseout(d){
