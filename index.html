@@ -31,17 +31,36 @@ text.big-text{
 .effect-layer text, text.dummy-text{
   font-size: 12px;
 }
+.svg-container {
+    display: inline-block;
+    position: relative;
+    width: 100%;
+    padding-bottom: 100%;
+    vertical-align: top;
+    overflow: hidden;
+}
+.svg-content {
+    display: inline-block;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
 
 </style>
 <body>
-
-<svg></svg>
-
+<h1>湾区地图</h1>
+<p id="zip">Zip</p>
+<p id="city">City</p>
+<hr>
+<p id="employment"></p>
+<p id="zip2"></p>
+<p id="city2"></p>
+<div id="container" class="svg-container"></div>
 <script src="https://d3js.org/d3.v3.min.js"></script>
 <script>
 
 var width = 960,
-    height = 960,
+    height = 700,
     centered;
 
 // Define color scale
@@ -53,22 +72,28 @@ var color = d3.scale.linear()
 var projection = d3.geo.mercator()
   .scale(20000)
   // Center the Map in Colombia
-  .center([-122, 37.5])
+  .center([-122.1, 37.65])
   .translate([width / 2, height / 2]);
 
 var path = d3.geo.path()
   .projection(projection);
 
 // Set svg width & height
-var svg = d3.select('svg')
-  .attr('width', width)
-  .attr('height', height);
+// responsive svg
+var svg = d3.select("div#container")
+  .append("svg")
+  .attr("preserveAspectRatio", "xMinYMin meet")
+  .attr("viewBox", "0 0 1500 1500")
+  .classed("svg-content", true);
 
 // Add background
 svg.append('rect')
   .attr('class', 'background')
   .attr('width', width)
   .attr('height', height)
+  // .call(d3.behavior.zoom().on("zoom", function () {
+  //   svg.attr("transform", "translate(" + d3.event.translate + ")" + " scale(" + d3.event.scale + ")")
+  // }))
   .on('click', clicked);
 
 var g = svg.append('g');
@@ -109,6 +134,8 @@ d3.json('bay1.json', function(error, mapData) {
       .on('click', clicked);
 });
 
+
+
 // Get province name
 function nameFn(d){
   return d && d.properties ? d.properties.NOMBRE_DPT : null;
@@ -127,7 +154,18 @@ function fillFn(d){
 
 // When clicked, zoom in
 function clicked(d) {
-  console.log(d.properties)
+  //失业率
+  d3.json("employment.json", function(error, data){
+    //use data here
+    var a = d.properties.GEOID10
+    console.log(data[a])
+    d3.select('#employment').text("失业率: "+data[a])
+    d3.select('#zip2').text("邮编: "+d.properties.GEOID10);
+    d3.select('#city2').text("城市: "+d.properties.city)
+})
+
+  
+ 
   var x, y, k;
 
   // Compute centroid of the selected path
@@ -157,7 +195,10 @@ function clicked(d) {
 function mouseover(d){
   // Highlight hovered province
   d3.select(this).style('fill', 'orange');
-
+//显示zip和city名字
+  d3.select('#zip').text(d.properties.GEOID10);
+  d3.select('#city').text(d.properties.city)
+  
   // Draw effects
   //textArt(nameFn(d));
 }
@@ -174,119 +215,13 @@ function mouseout(d){
 
   // Clear province name
   bigText.text('');
+//隐去zip和city
+  d3.select('#zip').text("Zip")
+  d3.select('#city').text("City")
 }
 
-// Gimmick
-// Just me playing around.
-// You won't need this for a regular map.
-
-var BASE_FONT = "'Helvetica Neue', Helvetica, Arial, sans-serif";
-
-var FONTS = [
-  "Open Sans",
-  "Josefin Slab",
-  "Arvo",
-  "Lato",
-  "Vollkorn",
-  "Abril Fatface",
-  "Old StandardTT",
-  "Droid+Sans",
-  "Lobster",
-  "Inconsolata",
-  "Montserrat",
-  "Playfair Display",
-  "Karla",
-  "Alegreya",
-  "Libre Baskerville",
-  "Merriweather",
-  "Lora",
-  "Archivo Narrow",
-  "Neuton",
-  "Signika",
-  "Questrial",
-  "Fjalla One",
-  "Bitter",
-  "Varela Round"
-];
-
-// function textArt(text){
-//   // Use random font
-//   var fontIndex = Math.round(Math.random() * FONTS.length);
-//   var fontFamily = FONTS[fontIndex] + ', ' + BASE_FONT;
-
-//   bigText
-//     .style('font-family', fontFamily)
-//     .text(text);
-
-//   // Use dummy text to compute actual width of the text
-//   // getBBox() will return bounding box
-//   dummyText
-//     .style('font-family', fontFamily)
-//     .text(text);
-//   var bbox = dummyText.node().getBBox();
-
-//   var textWidth = bbox.width;
-//   var textHeight = bbox.height;
-//   var xGap = 3;
-//   var yGap = 1;
-
-//   // Generate the positions of the text in the background
-//   var xPtr = 0;
-//   var yPtr = 0;
-//   var positions = [];
-//   var rowCount = 0;
-//   while(yPtr < height){
-//     while(xPtr < width){
-//       var point = {
-//         text: text,
-//         index: positions.length,
-//         x: xPtr,
-//         y: yPtr
-//       };
-//       var dx = point.x - width/2 + textWidth/2;
-//       var dy = point.y - height/2;
-//       point.distance = dx*dx + dy*dy;
-
-//       positions.push(point);
-//       xPtr += textWidth + xGap;
-//     }
-//     rowCount++;
-//     xPtr = rowCount%2===0 ? 0 : -textWidth/2;
-//     xPtr += Math.random() * 10;
-//     yPtr += textHeight + yGap;
-//   }
-
-//   var selection = effectLayer.selectAll('text')
-//     .data(positions, function(d){return d.text+'/'+d.index;});
-
-//   // Clear old ones
-//   selection.exit().transition()
-//     .style('opacity', 0)
-//     .remove();
-
-//   // Create text but set opacity to 0
-//   selection.enter().append('text')
-//     .text(function(d){return d.text;})
-//     .attr('x', function(d){return d.x;})
-//     .attr('y', function(d){return d.y;})
-//     .style('font-family', fontFamily)
-//     .style('fill', '#777')
-//     .style('opacity', 0);
-
-//   selection
-//     .style('font-family', fontFamily)
-//     .attr('x', function(d){return d.x;})
-//     .attr('y', function(d){return d.y;});
-
-//   // Create transtion to increase opacity from 0 to 0.1-0.5
-//   // Add delay based on distance from the center of the <svg> and a bit more randomness.
-//   selection.transition()
-//     .delay(function(d){
-//       return d.distance * 0.01 + Math.random()*1000;
-//     })
-//     .style('opacity', function(d){
-//       return 0.1 + Math.random()*0.4;
-//     });
-// }
+// d3 circular menu 或者 d3 radial menu
+//环形菜单  http://bl.ocks.org/lianyi/7d93b205776455eff705
+// https://www.cssscript.com/tag/radial-menu/
 
 </script>
